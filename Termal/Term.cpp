@@ -1,5 +1,5 @@
 // This code was greatfuly created by (c) MMiknich
-
+#define SEND_WAY 1
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
@@ -61,9 +61,10 @@ int main(int argc, char *argv[])
 			// Part of fair solution
 			double time = MPI_Wtime();
 			double x = 0;
-			while(x+h < 1){
+			while (x + h < 1)
+			{
 				printf("%f->%f\n", x, fair_solution(U_0, k, x, T));
-				x+=h;
+				x += h;
 			}
 			printf("%f->%f\n", 1.0, fair_solution(U_0, k, 1, T));
 			time = MPI_Wtime() - time;
@@ -136,8 +137,8 @@ int main(int argc, char *argv[])
 		//no need for sending right edge
 		while (T_i < T)
 		{
-			MPI_Isend(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Request);
-			MPI_Recv(data, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Status); //receving leftedge
+			MPI_Recv(data, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Status);
+			MPI_Send(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD);
 			data[size + 1] = U_e;
 			// if (OUT_TYPE)
 			// 	printf("rank %d, send %f rec %f at iter t = %f\n", myrank, data[1], data[0], T_i);
@@ -154,9 +155,8 @@ int main(int argc, char *argv[])
 		// if (OUT_TYPE)
 		// 	printf("My rank is %d, and i sending %d data segments\n", myrank, size);
 
-		
 		double *ans = (double *)malloc(N * sizeof(double));
-		
+
 		int pointer = 0;
 		for (int i = 1; i < p_num; i++)
 		{
@@ -210,18 +210,40 @@ int main(int argc, char *argv[])
 			if (pre_proc == 0)
 			{
 				data[0] = U_e;
-				MPI_Isend(data + size, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Request);
+				MPI_Send(data + size, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
 				MPI_Recv(data + size + 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
 				// if (OUT_TYPE)
 				// 	printf("rank %d, send %f rec %f at iter t = %f\n", myrank, data[size], data[size + 1], T_i);
 			}
 			else
 			{
-				MPI_Isend(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Request);
-				MPI_Isend(data + size, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Request);
+				if (SEND_WAY)
+				{
+					if (myrank % 2 == 0)
+					{
+						MPI_Recv(data, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Status);
+						MPI_Send(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD);
 
-				MPI_Recv(data, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Status);
-				MPI_Recv(data + size + 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
+						MPI_Send(data + size, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
+						MPI_Recv(data + size + 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
+					}
+					else
+					{
+						MPI_Send(data + size, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
+						MPI_Recv(data + size + 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
+
+						MPI_Recv(data, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Status);
+						MPI_Send(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD);
+					}
+				}
+				else
+				{
+					MPI_Recv(data, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Status);
+					MPI_Send(data + size, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
+					MPI_Recv(data + size + 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
+					MPI_Send(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD);
+				}
+
 				// if (OUT_TYPE)
 				// 	printf("rank %d, send %f rec %f at iter t = %f\n", myrank, data[size], data[size + 1], T_i);
 				// if (OUT_TYPE)
