@@ -1,0 +1,72 @@
+[n04:25236] *** Process received signal ***
+[n04:25236] Signal: Floating point exception (8)
+[n04:25236] Signal code: Integer divide-by-zero (1)
+[n04:25236] Failing at address: 0x408cc4
+[n04:25236] [ 0] /lib64/libpthread.so.0(+0xf100)[0x7efd88fd5100]
+[n04:25236] [ 1] ./a.out[0x408cc4]
+[n04:25236] [ 2] /lib64/libc.so.6(__libc_start_main+0xf5)[0x7efd88c1fb15]
+[n04:25236] [ 3] ./a.out[0x408799]
+[n04:25236] *** End of error message ***
+[n04:25416] *** Process received signal ***
+[n04:25416] Signal: Floating point exception (8)
+[n04:25416] Signal code: Integer divide-by-zero (1)
+[n04:25416] Failing at address: 0x408cc4
+[n04:25416] [ 0] /lib64/libpthread.so.0(+0xf100)[0x7fdddebc5100]
+[n04:25416] [ 1] ./a.out[0x408cc4]
+[n04:25416] [ 2] /lib64/libc.so.6(__libc_start_main+0xf5)[0x7fddde80fb15]
+[n04:25416] [ 3] ./a.out[0x408799]
+[n04:25416] *** End of error message ***
+[n04:25598] *** Process received signal ***
+[n04:25598] Signal: Floating point exception (8)
+[n04:25598] Signal code: Integer divide-by-zero (1)
+[n04:25598] Failing at address: 0x408cc4
+[n04:25598] [ 0] /lib64/libpthread.so.0(+0xf100)[0x7fb8120b5100]
+[n04:25598] [ 1] ./a.out[0x408cc4]
+[n04:25598] [ 2] /lib64/libc.so.6(__libc_start_main+0xf5)[0x7fb811cffb15]
+[n04:25598] [ 3] ./a.out[0x408799]
+[n04:25598] *** End of error message ***
+[n04:25778] *** Process received signal ***
+[n04:25778] Signal: Floating point exception (8)
+[n04:25778] Signal code: Integer divide-by-zero (1)
+[n04:25778] Failing at address: 0x408cc4
+[n04:25778] [ 0] /lib64/libpthread.so.0(+0xf100)[0x7f46f8d1d100]
+[n04:25778] [ 1] ./a.out[0x408cc4]
+[n04:25778] [ 2] /lib64/libc.so.6(__libc_start_main+0xf5)[0x7f46f8967b15]
+[n04:25778] [ 3] ./a.out[0x408799]
+[n04:25778] *** End of error message ***
+[n04:25959] *** Process received signal ***
+[n04:25959] Signal: Floating point exception (8)
+[n04:25959] Signal code: Integer divide-by-zero (1)
+[n04:25959] Failing at address: 0x408cc4
+[n04:25959] [ 0] /lib64/libpthread.so.0(+0xf100)[0x7f9eb7e45100]
+[n04:25959] [ 1] ./a.out[0x408cc4]
+[n04:25959] [ 2] /lib64/libc.so.6(__libc_start_main+0xf5)[0x7f9eb7a8fb15]
+[n04:25959] [ 3] ./a.out[0x408799]
+[n04:25959] *** End of error message ***
+[n04:26139] *** Process received signal ***
+[n04:26139] Signal: Floating point exception (8)
+[n04:26139] Signal code: Integer divide-by-zero (1)
+[n04:26139] Failing at address: 0x408cc4
+[n04:26139] [ 0] /lib64/libpthread.so.0(+0xf100)[0x7f52552dd100]
+[n04:26139] [ 1] ./a.out[0x408cc4]
+[n04:26139] [ 2] /lib64/libc.so.6(__libc_start_main+0xf5)[0x7f5254f27b15]
+[n04:26139] [ 3] ./a.out[0x408799]
+[n04:26139] *** End of error message ***
+[n04:26321] *** Process received signal ***
+[n04:26321] Signal: Floating point exception (8)
+[n04:26321] Signal code: Integer divide-by-zero (1)
+[n04:26321] Failing at address: 0x408cc4
+[n04:26321] [ 0] /lib64/libpthread.so.0(+0xf100)[0x7fe5dc775100]
+[n04:26321] [ 1] ./a.out[0x408cc4]
+[n04:26321] [ 2] /lib64/libc.so.6(__libc_start_main+0xf5)[0x7fe5dc3bfb15]
+[n04:26321] [ 3] ./a.out[0x408799]
+[n04:26321] *** End of error message ***
+[n04:26501] *** Process received signal ***
+[n04:26501] Signal: Floating point exception (8)
+[n04:26501] Signal code: Integer divide-by-zero (1)
+[n04:26501] Failing at address: 0x408cc4
+[n04:26501] [ 0] /lib64/libpthread.so.0(+0xf100)[0x7f6caa8ad100]
+[n04:26501] [ 1] ./a.out[0x408cc4]
+[n04:26501] [ 2] /lib64/libc.so.6(__libc_start_main+0xf5)[0x7f6caa4f7b15]
+[n04:26501] [ 3] ./a.out[0x408799]
+[n04:26501] *** End of error message ***
