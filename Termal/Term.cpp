@@ -24,10 +24,8 @@ double fair_solution(double U_0, double k, double x, double t, double epsilon = 
 	return result;
 }
 
-double iter_method(double old_i, double old_ip, double old_in, double k, double h, double dt, int i)
+double iter_method(double old_i, double old_ip, double old_in, double k, double h, double dt)
 {
-	//printf("%f %f %f %f %f %f\n", old_i, old_ip, old_in, k, h, dt);
-	//printf("i:%d->%f\n", i, (old_i + ((k * dt / (h * h)) * (old_in + old_ip - 2 * old_i))));
 	return (old_i + ((k * dt / (h * h)) * (old_in + old_ip - 2 * old_i)));
 }
 
@@ -48,7 +46,12 @@ int main(int argc, char *argv[])
 	double h = atof(argv[4]);
 	double dt = atof(argv[5]);
 	double T = atof(argv[6]);
-	bool OUT_TYPE = atoi(argv[7]);
+	int OUT_TYPE = atoi(argv[7]);
+
+	if (OUT_TYPE == 2)
+	{
+		dt = 0.449 * h * h / k;
+	}
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &p_num);
@@ -56,9 +59,9 @@ int main(int argc, char *argv[])
 
 	if (myrank == 0)
 	{
-		if (OUT_TYPE)
+		if (OUT_TYPE == 1)
 		{
-			// Part of fair solution
+			printf("--Theoretical Solution--\n");
 			double time = MPI_Wtime();
 			double x = 0;
 			while (x + h < 1)
@@ -73,11 +76,16 @@ int main(int argc, char *argv[])
 		}
 
 		// Multiprocs calc
+		if (OUT_TYPE == 1)
+			printf("--Algorithmical Solution--\n");
 		double time = MPI_Wtime(); // setting timer
 
 		int N, N_i = 0;
+		double result = 0;
+		int N_k[50] = {0};
+
 		N_i = int(1.0 / h);
-		double h_last = 0;
+		double h_last = 0; // len of last section
 
 		if (1.0 - N_i * h == 0)
 		{
@@ -90,15 +98,12 @@ int main(int argc, char *argv[])
 			h_last = 1.0 - N_i * h;
 		}
 
-		double result = 0;
-
-		int N_k[50] = {0};
 		for (int i = 0; i < p_num; i++)
 			N_k[i] = N / p_num;
 		for (int i = 0; i < N % p_num; i++)
 			N_k[i]++;
 
-		if (OUT_TYPE)
+		if (OUT_TYPE == 1)
 		{
 			int sum = 0;
 			for (int i = 0; i < p_num; i++)
@@ -106,54 +111,48 @@ int main(int argc, char *argv[])
 				sum += N_k[i];
 				printf("%d->%d ", i, N_k[i]);
 			}
-			printf("\nNum of points %d\n", sum);
+			printf("\nTotal num of points %d\n", sum);
 		}
 
-		// Sending Data | Counting interval
+		// Sending       | Counting interval
 		//              V
 		for (int i = 1; i < p_num; i++)
 		{
 			MPI_Send(N_k + i, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
 		}
 
-		double T_i = 0;
-
 		// Setting 2 data frames
 		int size = N_k[0];
 		double *data = (double *)malloc((size + 2) * sizeof(double));
 		double *new_data = (double *)malloc((size + 2) * sizeof(double));
 		int pre_proc = p_num - 1;
+		double T_i = 0;
+
 		//Initilising t=0 data
 		for (int i = 0; i < size + 2; i++)
 			data[i] = U_0;
 
-		/* 
-			1) We send our right and left edge
-			2) We get our left and right edge
-			3) Then we cont
-			4) 1->2, 2->1
-		*/
-
-		//no need for sending right edge
 		while (T_i < T)
 		{
-			MPI_Recv(data, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Status);
-			MPI_Send(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD);
-			data[size + 1] = U_e;
-			// if (OUT_TYPE)
-			// 	printf("rank %d, send %f rec %f at iter t = %f\n", myrank, data[1], data[0], T_i);
+			if (pre_proc == 0)
+				data[0] = U_e;
+			else
+			{
+				MPI_Recv(data, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Status); // left edge send-receve
+				MPI_Send(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD);
+			}
+
+			data[size + 1] = U_e; //right edge "edge condition"
+
 			for (int i = 1; i < size; i++)
-				new_data[i] = iter_method(data[i], data[i - 1], data[i + 1], k, h, dt, i);
-			new_data[size] = iter_method(data[size], data[size - 1], data[size + 1], k, h_last, dt, size);
+				new_data[i] = iter_method(data[i], data[i - 1], data[i + 1], k, h, dt);
+			new_data[size] = iter_method(data[size], data[size - 1], data[size + 1], k, h_last, dt);
 			double *tmp = new_data;
 			new_data = data;
 			data = tmp;
 			T_i += dt;
 			//and again
 		}
-
-		// if (OUT_TYPE)
-		// 	printf("My rank is %d, and i sending %d data segments\n", myrank, size);
 
 		double *ans = (double *)malloc(N * sizeof(double));
 
@@ -167,17 +166,20 @@ int main(int argc, char *argv[])
 		}
 		for (int i = 1; i <= size; i++)
 			ans[N - size + (i - 1)] = data[i];
-		for (int i = 0; i < N; i++)
-			printf("%d->%f\n", i, ans[i]);
-
+		if (OUT_TYPE == 1)
+		{
+			for (int i = 0; i < N; i++)
+				printf("%d->%f\n", i, ans[i]);
+		}
 		free(data);
 		free(new_data);
 		free(ans);
 
-		//add wall
 		time = MPI_Wtime() - time;
-		if (OUT_TYPE)
+		if (OUT_TYPE == 1)
 			printf("Total Calc. Time is: %f\n\n", time);
+		else
+			printf("%d %f\n", p_num, time);
 	}
 
 	else
@@ -196,12 +198,11 @@ int main(int argc, char *argv[])
 		double *data = (double *)malloc((size + 2) * sizeof(double));
 		double *new_data = (double *)malloc((size + 2) * sizeof(double));
 
-		double T_i = 0;
-
 		int pre_proc = (myrank - 1) % p_num;
 		int next_proc = (myrank + 1) % p_num;
 
 		//Initilising T_i=0 data
+		double T_i = 0;
 		for (int i = 0; i < size + 2; i++)
 			data[i] = U_0;
 
@@ -212,12 +213,10 @@ int main(int argc, char *argv[])
 				data[0] = U_e;
 				MPI_Send(data + size, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
 				MPI_Recv(data + size + 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
-				// if (OUT_TYPE)
-				// 	printf("rank %d, send %f rec %f at iter t = %f\n", myrank, data[size], data[size + 1], T_i);
 			}
 			else
 			{
-				if (SEND_WAY)
+				if (SEND_WAY) // O(1) senting algorithm
 				{
 					if (myrank % 2 == 0)
 					{
@@ -236,22 +235,17 @@ int main(int argc, char *argv[])
 						MPI_Send(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD);
 					}
 				}
-				else
+				else // O(p) sending algorithm
 				{
 					MPI_Recv(data, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Status);
 					MPI_Send(data + size, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
 					MPI_Recv(data + size + 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
 					MPI_Send(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD);
 				}
-
-				// if (OUT_TYPE)
-				// 	printf("rank %d, send %f rec %f at iter t = %f\n", myrank, data[size], data[size + 1], T_i);
-				// if (OUT_TYPE)
-				// 	printf("rank %d, send %f rec %f at iter t = %f\n", myrank, data[1], data[0], T_i);
 			}
 
 			for (int i = 1; i <= size; i++)
-				new_data[i] = iter_method(data[i], data[i - 1], data[i + 1], k, h, dt, i);
+				new_data[i] = iter_method(data[i], data[i - 1], data[i + 1], k, h, dt);
 
 			double *tmp = new_data;
 			new_data = data;
@@ -259,10 +253,6 @@ int main(int argc, char *argv[])
 			T_i += dt;
 			//and again
 		}
-
-		//-------Sending result--------------
-		// if (OUT_TYPE)
-		// 	printf("My rank is %d, and i sending %d data segments\n", myrank, size);
 
 		MPI_Send(data + 1, size, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD); // sending result
 
