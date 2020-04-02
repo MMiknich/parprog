@@ -48,7 +48,8 @@ int main(int argc, char *argv[])
 	double T = atof(argv[6]);
 	int OUT_TYPE = atoi(argv[7]);
 
-	if (OUT_TYPE == 2)
+
+	if (OUT_TYPE == 0)
 	{
 		dt = 0.449 * h * h / k;
 	}
