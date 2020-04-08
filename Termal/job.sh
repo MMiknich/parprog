@@ -4,20 +4,29 @@
 #PBS -N Termal_MichalM
 #PBS -q batch
 
-#cd $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
 
 out_file=./temptask2
 k=1
-U_0=1
-U_e=0
-dt= 0.0002
-OUT_TYPE=3
-T=0.1
+U0=1
+Ue=0
+dt=0.0002
+OUT_TYPE=0
+T=0.0001
 
-for j in 0.0005 #0.0001 0.00002
+for j in 0.0005 0.0001 
 do
-	for i in 1 2 3
+	for i in {1..16}
 	do
-		mpirun -np $i $out_file $U_0 $U_e $k $j $dt $T $OUT_TYPE
+		
+		mpirun --hostfile $PBS_NODEFILE -np $i $out_file $U0 $Ue $k $j $dt $T $OUT_TYPE
 	done
+done
+T=0.00001
+for j in 0.00002
+do
+	for i in {1..16}
+	do
+                mpirun --hostfile $PBS_NODEFILE -np $i $out_file $U0 $Ue $k $j $dt $T $OUT_TYPE
+        done
 done

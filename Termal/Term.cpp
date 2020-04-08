@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 	if (argc < 8)
 	{
 		printf("Incorrect use of function");
-		return -1;
+		return 1;
 	}
 	double U_0 = atof(argv[1]);
 	double U_e = atof(argv[2]);
