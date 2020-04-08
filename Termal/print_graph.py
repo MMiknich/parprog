@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 file = open("temp_data2", "r")
 str = file.readline()
@@ -29,8 +30,8 @@ while str:
     xt.append(str.split())
     str = file.readline()
 for j in xt:
-     y[i] = (y[i]+float(j[1]))/2
-     i += 1
+    y[i] = (y[i]+float(j[1]))/2
+    i += 1
 for i in range(1, 16):
     y[i] = y[0]/y[i]
 for i in range(17, 32):
@@ -42,8 +43,24 @@ y[16] = 1
 y[32] = 1
 print(len(y))
 fig = plt.figure()
-plt.plot(range(1, 17), y[0:16])
-plt.plot(range(1, 17), y[16:32])
-plt.plot(range(1, 11), y[32:42])
+plt.plot(range(1, 17), y[0:16], label="2k")
+plt.plot(range(1, 17), y[16:32], label="10k")
+plt.plot(range(1, 11), y[32:42], label="50k")
+plt.legend()
 plt.show()
 fig.savefig("foo.pdf", bbox_inches='tight')
+
+x1 = np.array(list(range(1, 17)))
+x2 = np.array(list(range(1,11)))
+
+y1 = np.array(y[0:16])
+y2 = np.array(y[16:32])
+y3 = np.array(y[32:42])
+
+fig = plt.figure()
+plt.plot(x1, y1/x1, label="2k")
+plt.plot(x1, y2/x1, label="10k")
+plt.plot(x2, y3/x2, label="50k")
+plt.legend()
+plt.show()
+fig.savefig("bar.pdf", bbox_inches='tight')
