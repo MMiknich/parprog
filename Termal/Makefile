@@ -10,6 +10,6 @@ compile:
 sanitize:
 	$(CXX) $(CXXSANITIZEFLAGS) -o temptask2 Term.cpp
 debug:
-	$(EXEC) $(EXECFLAGS) 4 temptask2 1 0 1 0.0005 0.0002 0.1 0
+	$(EXEC) $(EXECFLAGS) 4 temptask2 1 0 1 0.02 0.0002 0.1 1
 test:
 	qsub $(QFILE)

@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+ 
 file = open("temp_data2", "r")
 str = file.readline()
 xt = []

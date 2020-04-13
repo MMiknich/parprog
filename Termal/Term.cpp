@@ -1,12 +1,14 @@
 // This code was greatfuly created by (c) MMiknich
+
 #define SEND_WAY 1
+
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
 #include <math.h>
 #include <mpi.h>
 
-double fair_solution(double U_0, double k, double x, double t, double epsilon = 0.0001)
+double fair_solution(double U_0, double k, double x, double t, double epsilon = 0.0000001)
 {
 	double result = 0;
 	double iter = 0;
@@ -15,7 +17,7 @@ double fair_solution(double U_0, double k, double x, double t, double epsilon = 
 	{
 		int itt = (2 * iter + 1);
 		iter_sum = exp(
-					   -1 * k * M_PI * M_PI * itt * itt * t) /
+					   -1 *1.07 * k * M_PI * M_PI * itt * itt * t) /
 				   itt * sin(M_PI * itt * x);
 		result += iter_sum;
 		iter++;
@@ -26,7 +28,7 @@ double fair_solution(double U_0, double k, double x, double t, double epsilon = 
 
 double iter_method(double old_i, double old_ip, double old_in, double k, double h, double dt)
 {
-	return (old_i + ((k * dt / (h * h)) * (old_in + old_ip - 2 * old_i)));
+	return (old_i + ((k * dt / (h * h)) * (old_in + old_ip - (2 * old_i))));
 }
 
 int main(int argc, char *argv[])
@@ -40,6 +42,7 @@ int main(int argc, char *argv[])
 		printf("Incorrect use of function");
 		return 1;
 	}
+
 	double U_0 = atof(argv[1]);
 	double U_e = atof(argv[2]);
 	double k = atof(argv[3]);
@@ -47,11 +50,11 @@ int main(int argc, char *argv[])
 	double dt = atof(argv[5]);
 	double T = atof(argv[6]);
 	int OUT_TYPE = atoi(argv[7]);
-
+	// input data
 
 	if (OUT_TYPE == 0)
 	{
-		dt = 0.449 * h * h / k;
+		dt = 0.499 * h * h / k;
 	}
 
 	MPI_Init(&argc, &argv);
@@ -60,12 +63,13 @@ int main(int argc, char *argv[])
 
 	if (myrank == 0)
 	{
+		//theotetical solution
 		if (OUT_TYPE == 1)
 		{
 			printf("--Theoretical Solution--\n");
 			double time = MPI_Wtime();
 			double x = 0;
-			while (x + h < 1)
+			while (x + h <= 1)
 			{
 				printf("%f->%f\n", x, fair_solution(U_0, k, x, T));
 				x += h;
@@ -79,6 +83,7 @@ int main(int argc, char *argv[])
 		// Multiprocs calc
 		if (OUT_TYPE == 1)
 			printf("--Algorithmical Solution--\n");
+		
 		double time = MPI_Wtime(); // setting timer
 
 		int N, N_i = 0;
@@ -124,14 +129,15 @@ int main(int argc, char *argv[])
 
 		// Setting 2 data frames
 		int size = N_k[0];
-		double *data = (double *)malloc((size + 2) * sizeof(double));
-		double *new_data = (double *)malloc((size + 2) * sizeof(double));
 		int pre_proc = p_num - 1;
-		double T_i = 0;
-
-		//Initilising t=0 data
-		for (int i = 0; i < size + 2; i++)
+		if(pre_proc != 0)
+			size++;
+		double *data = (double *)malloc((size) * sizeof(double));
+		double *new_data = (double *) malloc((size) * sizeof(double));
+			//Initilising t=0 data
+		for (int i = 0; i < size; i++)
 			data[i] = U_0;
+		double T_i = 0;
 
 		while (T_i < T)
 		{
@@ -143,16 +149,16 @@ int main(int argc, char *argv[])
 				MPI_Send(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD);
 			}
 
-			data[size + 1] = U_e; //right edge "edge condition"
-
-			for (int i = 1; i < size; i++)
+			data[size - 1] = U_e; //right edge "edge condition"
+			
+			for (int i = 1; i < size - 2; i++)
 				new_data[i] = iter_method(data[i], data[i - 1], data[i + 1], k, h, dt);
-			new_data[size] = iter_method(data[size], data[size - 1], data[size + 1], k, h_last, dt);
+
+			new_data[size - 2] = iter_method(data[size - 2], data[size - 3], data[size - 1], k, h_last, dt);
 			double *tmp = new_data;
 			new_data = data;
 			data = tmp;
 			T_i += dt;
-			//and again
 		}
 
 		double *ans = (double *)malloc(N * sizeof(double));
@@ -160,17 +166,16 @@ int main(int argc, char *argv[])
 		int pointer = 0;
 		for (int i = 1; i < p_num; i++)
 		{
-			double temp_res = 0;
 			MPI_Recv(ans + pointer, N_k[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &Status);
 			pointer += N_k[i];
-			result += temp_res;
 		}
-		for (int i = 1; i <= size; i++)
-			ans[N - size + (i - 1)] = data[i];
+		for (int i = 1; i < size; i++)
+			ans[N - size + i] = data[i];
 		if (OUT_TYPE == 1)
 		{
 			for (int i = 0; i < N; i++)
-				printf("%d->%f\n", i, ans[i]);
+				//if(i%5==0)
+				printf("%d->%.8f\n", i, ans[i]);
 		}
 		free(data);
 		free(new_data);
@@ -195,16 +200,18 @@ int main(int argc, char *argv[])
 			4) 1->2, 2->1
 		*/
 
-		// Setting 2 data frames
-		double *data = (double *)malloc((size + 2) * sizeof(double));
-		double *new_data = (double *)malloc((size + 2) * sizeof(double));
-
 		int pre_proc = (myrank - 1) % p_num;
 		int next_proc = (myrank + 1) % p_num;
 
+		if(pre_proc == 0)
+			size --;
+		size ++;
+		double *data = (double *)malloc((size) * sizeof(double));
+		double *new_data = (double *)malloc((size) * sizeof(double));
+
 		//Initilising T_i=0 data
 		double T_i = 0;
-		for (int i = 0; i < size + 2; i++)
+		for (int i = 0; i < size; i++)
 			data[i] = U_0;
 
 		while (T_i < T)
@@ -212,8 +219,8 @@ int main(int argc, char *argv[])
 			if (pre_proc == 0)
 			{
 				data[0] = U_e;
-				MPI_Send(data + size, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
-				MPI_Recv(data + size + 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
+				MPI_Send(data + size - 2, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
+				MPI_Recv(data + size - 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
 			}
 			else
 			{
@@ -224,13 +231,13 @@ int main(int argc, char *argv[])
 						MPI_Recv(data, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Status);
 						MPI_Send(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD);
 
-						MPI_Send(data + size, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
-						MPI_Recv(data + size + 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
+						MPI_Send(data + size - 2, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
+						MPI_Recv(data + size - 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
 					}
 					else
 					{
-						MPI_Send(data + size, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
-						MPI_Recv(data + size + 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
+						MPI_Send(data + size - 2, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
+						MPI_Recv(data + size - 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
 
 						MPI_Recv(data, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Status);
 						MPI_Send(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD);
@@ -239,23 +246,26 @@ int main(int argc, char *argv[])
 				else // O(p) sending algorithm
 				{
 					MPI_Recv(data, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD, &Status);
-					MPI_Send(data + size, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
-					MPI_Recv(data + size + 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
+					MPI_Send(data + size - 2, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD);
+					MPI_Recv(data + size - 1, 1, MPI_DOUBLE, next_proc, 0, MPI_COMM_WORLD, &Status);
 					MPI_Send(data + 1, 1, MPI_DOUBLE, pre_proc, 0, MPI_COMM_WORLD);
 				}
 			}
 
-			for (int i = 1; i <= size; i++)
+			for (int i = 1; i < size - 1; i++)
 				new_data[i] = iter_method(data[i], data[i - 1], data[i + 1], k, h, dt);
 
 			double *tmp = new_data;
 			new_data = data;
 			data = tmp;
 			T_i += dt;
-			//and again
 		}
 
-		MPI_Send(data + 1, size, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD); // sending result
+		if(pre_proc == 0){
+			MPI_Send(data, size, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+		}else{
+			MPI_Send(data + 1, size - 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+		}
 
 		free(data);
 		free(new_data);
