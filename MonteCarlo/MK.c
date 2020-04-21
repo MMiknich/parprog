@@ -6,8 +6,8 @@
 #include <time.h>
 
 #define FAIR_RESULT 3.14159265358979323846 * 3.14159265358979323846 / 8
-#define FANSY_OUTPUT 1
-#define REAL_SLAVE_MODE 1
+#define FANSY_OUTPUT 0
+#define REAL_SLAVE_MODE 0
 #define LIMITS_X_LEFT 0.0
 #define LIMITS_X_RIGHT 3.14159265358979323846
 #define LIMITS_Y_LEFT 0.0
@@ -89,7 +89,6 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Slave thread joining failure\n");
                 return -1;
             }
-            printf("output %d", *(int *)output);
             correct_points += *(int *)output;
         }
     }
@@ -106,10 +105,12 @@ int main(int argc, char *argv[])
     double result = sq * correct_points / pow(10.0, (double)point_deg);
 
     if (FANSY_OUTPUT)
-        printf("%d threads\n%d points\ntime is %f\nsum is %f\nnumber of correct points is %d\nresult is %f\nerror is %f\n",
-               slave_num, (int)pow(10.0, (double)point_deg),  time_total,sum_glob/ correct_points, correct_points, result, result - FAIR_RESULT);
+        printf("%d threads\n%d points\ntime is %f\nnumber of correct points is %d\nresult is %f\nerror is %f\n",
+               slave_num, (int)pow(10.0, (double)point_deg),  time_total, correct_points, result, result - FAIR_RESULT);
     else
-        printf("%f %f\n", time_total, result - FAIR_RESULT);
+    {
+        printf("%f;%f;\n", time_total, result - FAIR_RESULT);
+    }
 }
 int is_in_space(double x, double y)
 {
@@ -159,7 +160,6 @@ void *slave(void *args)
     {
         sem_wait(&result_sem);
         correct_points += c_p;
-        sum_glob += sum;
         sem_post(&result_sem);
         pthread_exit(NULL);
     }

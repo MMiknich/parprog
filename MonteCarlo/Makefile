@@ -12,4 +12,4 @@ sanitize:
 debug: compile
 	$(EXEC)$(EXECFLAGS)MK.o 10 9
 test: compile
-	qsub $(QFILE)
+	sh $(QFILE)

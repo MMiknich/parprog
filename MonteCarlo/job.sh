@@ -1,15 +1,8 @@
 #!/bin/bash
-
-#PBS -l walltime=00:10:00,nodes=4:ppn=4
-#PBS -N Termal_MichalM
-#PBS -q batch
-
-cd $PBS_O_WORKDIR
-
 out_file=./MK.o
-D = 9
-for i in {1..16}
+D=8
+echo 'time; error;'
+for i in 9 10 11 12 13 14 15 16
 do
-        $out_file $i $D
+	$out_file $i $D
 done
-
