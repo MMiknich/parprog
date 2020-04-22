@@ -6,8 +6,8 @@
 #include <time.h>
 
 #define FAIR_RESULT 3.14159265358979323846 * 3.14159265358979323846 / 8
-#define FANSY_OUTPUT 0
-#define REAL_SLAVE_MODE 0
+#define FANSY_OUTPUT 1
+#define SLAVE_MODE 1
 #define LIMITS_X_LEFT 0.0
 #define LIMITS_X_RIGHT 3.14159265358979323846
 #define LIMITS_Y_LEFT 0.0
@@ -25,6 +25,7 @@ void *slave(void *args);
 int is_in_space(double x, double y);
 
 sem_t result_sem;
+
 int correct_points = 0;
 
 int main(int argc, char *argv[])
@@ -66,7 +67,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (!REAL_SLAVE_MODE)
+    if (!SLAVE_MODE)
     {
         for (int i = 0; i < slave_num; i++)
         {
@@ -151,7 +152,7 @@ void *slave(void *args)
             c_p++;
     }
 
-    if (REAL_SLAVE_MODE)
+    if (SLAVE_MODE)
     {
         my_tag->point_num = c_p;
         pthread_exit((void *)&(my_tag->point_num));

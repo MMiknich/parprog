@@ -10,6 +10,6 @@ compile:
 sanitize:
 	$(CXX) $(CXXSANITIZEFLAGS) -o MK.o MK.c
 debug: compile
-	$(EXEC)$(EXECFLAGS)MK.o 10 9
+	$(EXEC)$(EXECFLAGS)MK.o 10 8
 test: compile
 	sh $(QFILE)
